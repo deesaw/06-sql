@@ -1,0 +1,17 @@
+list=[]
+for i  in string:
+	if i.isalphanum()==False
+		list.append(index[i])
+
+enumerate i,j in list:
+	if i=0:
+		string[0,j]
+	else:
+		string[j,list[i+1]]
+
+1
+1
+1
+2
+1
+1

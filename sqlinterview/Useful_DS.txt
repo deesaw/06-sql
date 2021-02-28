@@ -1,0 +1,195 @@
+Balance Optimizer
+
+Partitioning - List , Hash (Round Robin), Range , Composite (with Range)
+Existing table can be partioned with work arounds only
+Modify/adding partitions easy
+
+Indexing - 
+Bitmap  - points to a bock of data - low cardinality, that is, the number of distinct values is small compared to the number of table rows, 
+			queries reference many columns in an ad hoc fashion
+			The indexed table is either read-only or not subject to significant modification by DML statements.
+bit Tree (Default)   - balanced trees - points to a single row (B-tree cluster indexes - if want to pint to cluster)
+Function based  - If we apply function on a column then index is not used. exception TO_DATE
+Unique
+Primary key
+
+ALTER INDEX supplier_idx   REBUILD COMPUTE STATISTICS;
+Constraint create their own indexes
+Hint - forces SQL use index
+
+
+role playing dimension - Same dimension can be referenced gaain in Fact. (Date_key , Sales_date_key)
+Late arriving dimension - early arriving fact (-1) key
+
+Oracle function
+MONTHS_BETWEEN
+MONTHS_ADD
+TRUNC
+
+
+
+LISTAGG- 
+https://www.folkstalk.com/2011/07/datastage-scenario-based-questions-part_05.html
+https://www.youtube.com/watch?v=Rzjnw_ShctU
+https://www.youtube.com/watch?v=nPaAtDV_rSA
+Pivot UnPivot in DS
+Get nth hight salary
+Running total in Datastage
+Display previous record
+Call a parallel job from paralle job
+Sequence job conditional call from paralel job
+Compare DS job with export or any other project
+run a sql from datastage sequence
+Before after sl run in Oracle connectore
+
+gives duplicate entries: 	sort fil.txt| unique -d / awk '!visited[$0]++' your_file > deduplicated_file
+removes first and last line:	 sed 1$d
+removes empty lines:	sed -i '/^$/d' file.txt
+remove duplicates based on column:	awk -F',' '!seen[$3]++' filename
+
+Shared Container - job that uses SC needs to be recompiled
+
+dsjob -purge -days 2 {project} {job}
+dsjob -lprojects
+dsjob -ljobs project
+
+Nodes- Config file 
+conductor (1 per job)- > Section leader(1 per node)- > Player (~1 per stage)
+resource disk = 2* (largest dataset)
+DS architecture
+
+Variables and their scope
+Environment - > Job
+If the value of the environment variable is changed in the Administrator client, the job retrieves the new value without recompiling
+$PROJDEF
+
+Start and Stop server - 
+$DSHOME environment variable to point to the /opt/IBM/InformationServer/Server/DSENGINE
+$DSHOME/bin/uv -admin -stop
+
+Factless facyt - fact table without measures - student attenance
+Junk Dimension - low cardinality dimensions (flags) put together, Retail - Customer assistance, Mode of payment, store type
+
+Active vs passive
+difference between join, lookup, merge
+Scenario
+	Type2
+	
+Should we reeuse the surrogate kaey fron legacy dimensions - only if you are sure that there will always be only one source system
+Surrogate should be an integer - Performance on joins, saves space in fact tables
+
+Memory Storage usage -
+VARCHAR - 4000 Bytes
+NUMBER - 21 Bytes
+
+Surrogate key - property
+Executable - in OSH language. extension? wher is i saved
+Compile time Excutable is different from runtiime
+
+Surrogate key - File Block Size - No. of values it takes in cache-  <>1 - will not provide sequentinal value or if set to 1 generates sequential nos. will slows down the I/o 
+Look up - single reject link, multiple refrence. how go diffrenetiate - use merge
+Seq file - multiple readers per node
+Row Gen - default varchar <> cycle
+GetSavedInoutRecord
+Sort - Stable , Unique
+Lopp variable unknown, based on inpuyt values- repeat values no. of times
+Deleet all datasets
+Do we need to re-compile the code when we move o aother environmnet
+
+Compile vs VALIDATE
+Validating a job is all about running the job in ‘Check only’ mode.
+- The connections are established to data sources or data warehouse
+- The SELECT statements are prepared
+- Intermediate files are opened in Hashed file, UniVerse or ODBC stages
+
+-Compilation is done by
+- Checking data stage engine to determine whether all needed properties are given
+- Upon selecting Validate Job, the data stage checks the validity of all given properties
+
+what is the optimum DUMP score
+Default job properties
+File stage properties
+Native stage for oracle - Oracle connector 
+Netezza vs Oracle
+ROWID - ROWNUM
+REINDEX DATABASE - REBUILD INDEX
+COMMIT WORk - COMMIT
+ROLLBACK WORK - ROLLBACK
+
+set show_deleted_records = true
+select createxid,deletexid, * from table
+
+Big data  - hive, bigdatafile, seq file - unix command Filter stage
+
+Partitining
+Unix commands
+-warn 0
+-mode VALIDATE
+wait vs run and move on
+Period - view data in dataset
+
+Orchadmin commands
+JobList = DSGetProjectInfo(DSJ.ME, DSJ.JOBLIST) 
+Convert "," To @FM In JobList
+
+
+can same dataset be used downstream with different partitioning
+Can 2 passive stage be joined
+Transformfer - delimeter , 1 st field, Left of 2
+Job to return value to seq
+why to convert date to julian
+Prameter overriding
+RCP
+Config file changes in variou places
+Rebuilding of index
+
+Create unique no. o- surrogate key
+
+https://sites.google.com/site/jmdstips/datastage/environment-variables
+
+
+APT_CNfig_FILE - defaulat Apt
+Parameter set - #PROJDEF
+RCP shoould NOT be checked by default
+Preserve partitioning - Default - Propagate, Set
+Nullability, format, datatype, duplicates	
+Loop threshhold
+Keep peripherals in the sequence job, so that it can changed
+Conformed Dimension tables are dumped to datasets
+
+The “Restrict Memory Usage” option should be included here. If you want
+more memory available for the sort, you can only set that via the Sort
+Stage — not on a sort link. The environment variable
+$APT_TSORT_STRESS_BLOCKSIZE can also be used to set sort
+memory usage (in MB) per partition
+
+Warning : When checking operator: Operator of type "APT_TSortOperator": will partition despite the preserve-partitioning flag on the data set on input port 0
+These warnings are obtained when we are using some specific partitioning method in a stage in the job e.g hash/same etc but in the preceding stage , preserve portioning(also default) is set in the stage>advanced tab
+clear flag in the preceding stage
+
+ Aggregators
+Hash method - when the number of distinct key column values is small (1000 or fewer distinct grouping values per MB).
+Sort method - when the number of distinct key values is large or unknown.
+
+Fork join error - APT_DISABLE_COMBINATION - FALSE -  Reducing the number of processes may decrease performance but can allow jobs to complete
+APT_SORT_INSERTION_CHECK_ONLY - TRUE - verify sort order but not actually perform a sort, aborting the job if data is not in the required sort order
+APT_BUFFER_MAXIMUM_MEMORY - 30 GB increase in case record size is huge
+
+Join/Lookup - s nullable in the Join stage input in order to identify
+unmatched records.
+Reduce array size in cases no. of columns are more
+
+OPTIONS(DIRECT=FALSE,PARALLEL=TRUE) - The conventional path loader essentially loads the data by using standard insert statements.
+the direct path loader (direct=true) loads directly into the Oracle data files and creates blocks in Oracle database block format
+
+To not load data in case of error 
+Array size - 1, Record Count - 0
+Update first and then Insert
+Surrogate key - file extension - .sk or .skey .stat
+
+To enable load from point of failure
+Difference between versions
+Looping in Xfm
+Nullability of Stage vraiables
+Dedicated Oracle target stage
+manager was dropped

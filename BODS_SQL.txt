@@ -1,0 +1,69 @@
+table partitioning
+Data Transform
+where clause
+join rank
+run as a seperate process
+lookup_ext- nocache,demandload cache,presistent
+
+Degree of parallelism:Threads with table partitionning
+Cache type:Pageable
+indexing
+table partitioning
+indexing-composite primary key,joins,where
+Number of loaders
+Transaction control
+Transaction order
+Since NULL is an unknown, a NOT IN query containing a NULL or NULLs in the list of possible values will always return 0 records
+ since there is no way to be sure that the NULL value is not the value being tested.
+
+sequence
+identity insert
+
+DECLARE @var int
+SELECT @var=5
+WHILE @var>0
+BEGIN
+PRINT REPLICATE ('*',@var)
+SET @var=@var-1
+END
+
+DECLARE @var int
+SELECT @var=1
+WHILE @var<=5
+BEGIN
+PRINT REPLICATE('*',@var)
+SET @var=@var+1
+END
+
+
+DECLARE @var1 int ,@var2 int
+SELECT @var1=4 ,@var2=1
+WHILE @var2<=5
+BEGIN
+PRINT replicate(' ',@var1)+ replicate('*',@var2)
+SET @var1=@var1-1
+SET @var2=@var2+1
+END
+
+#Fibnoacci series
+
+WITH FIBOO AS (
+SELECT 0 AS FIRST1 , 1 AS SECOND1 ,1 AS STEP
+UNION ALL
+SELECT SECOND1,SECOND1+FIRST1,STEP+1
+FROM FIBOO
+WHERE STEP<10
+
+)
+SELECT * from FIBOO
+*
+**
+***
+****
+
+WITH cte AS (
+select 'intervieww' as pattern , len('intervieww') as l
+UNION ALL
+select SUBSTRING(pattern,1,l-1),l-1 from cte
+where l>1
+)select * from cte

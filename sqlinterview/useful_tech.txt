@@ -1,0 +1,758 @@
+SAP
+
+--------------------List all columns of a table ------------------------------------------
+
+select COLUMN_NAME,
+data_type_name 
+from SYS.TABLE_COLUMNS WHERE 
+TABLE_NAME = 'STG_MDM_C0098_FIN_SALESVIEW_MAP' 
+AND SCHEMA_NAME = 'STAGING' ORDER BY COLUMN_NAME
+
+Netezza
+
+--------------------------distribution_key-----------------------------------------
+SELECT tab.tablename ,COALESCE(map.attname,'RANDOM') AS distribution_key       ,map.distseqno AS dist_seq_no
+FROM _v_table tab  LEFT OUTER JOIN _v_table_dist_map map  ON map.objid = tab.objid WHERE UPPER(objtype)
+IN ('TABLE','SECURE TABLE') 
+andTABLENAME,  not(tab.tablename like 'SNAP%' or tab.tablename like 'NZCC%' )
+ ORDER BY tab.tablename, map.distseqno;
+
+
+Unix
+
+cat tjx_to_acxiom_cust_01_20170808.dat|awk -F'>~<' '{print $1"_"$3"_"$4"_"$5"_"$6"_"$7"_"$8}'|grep -i '216201708080128051702941'
+cat tjx_ods_source_individual_out_20170504_1.txt|awk -F'>~<' '{print$2"_"$3"_"$9"_"$4"_"$5"_"$6"_"$7"_"$8}'|grep -i 'LEELA.BADAM@GMAIL.COM'
+
+/*********************Migrate unix directory folder structure*********************************/
+
+cp -R source/ destination/
+
+find . -type d -exec mkdir /destination/{} \;
+
+find . -type d >dirs.txt
+xargs mkdir -p <dirs.txt
+
+
+/*********************Validate delimiter in file*********************************/
+awk -F "	"" ' { print NF-1 } ' 9178_Pre_Material_Manual_SFG_Sales_Success_270119092035.txt | sort | uniq -c
+
+
+try running this command:
+export DSHOME="/dsinst001/IBM/InformationServer/Server/DSEngine"
+export PATH=`echo ${PATH}":/dsland001/etl/Projects/EGS_US/script:/dsland001/etl/Projects/EGS_US/sql"`
+PS1='`pwd` $ '
+. $DSHOME/dsenv 
+only PATH is needed for sqlldr command to be activated
+
+
+http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
+
+/********************************DELETE 1st line in all files  ********************************/
+
+find ./ -type f -exec sed -i '1!d' {} \; 
+ 
+
+
+/********************************Fetch parent table and column  ********************************/
+
+   select col.owner,col.table_name,col.constraint_name, col.column_name 
+  
+from all_constraints cons
+,
+all_cons_columns col
+where cons.constraint_name  in
+ (
+   select r_constraint_name from all_constraints 
+   where  table_name = 'F_CUST_ITEM_ADJ_SLS'
+   and owner = 'RBI_AC_DM' and constraint_type = 'R'
+ )
+ 
+AND col.owner =cons.owner and col.table_name =cons.table_name and col.constraint_name = cons.constraint_name 
+ and cons.constraint_type in ('P')
+ AND cons.owner ='RBI_AC_DM'
+   
+
+/********************************ADD PRIMARY KEY CONSTRAINT********************************/
+alter table STAGING.STG_OTC_C0079_D1_CUSTOMER add primary key (CUST);  
+ 
+
+
+
+/********************************Fetch COULMNS OF referential or Foreign Keys OR PRIMARY OR UNIQUE********************************/
+   
+select col.owner,col.table_name,col.constraint_name, col.column_name from all_cons_columns col,
+ all_constraints cons
+ where col.owner =cons.owner and col.table_name =cons.table_name and col.constraint_name = cons.constraint_name 
+ and cons.constraint_type in ('P', 'U','R')
+   and cons.table_name = 'P_SA_ORDR'
+   and cons.owner = 'GSP_DW'
+ 
+
+
+/********************************SQl wildcard character escape underscore********************************/
+select * from table where col like 'as\_' escape '\'
+
+
+/********************************Datastage run and list jobs in a project********************************/
+
+dsjob  –run –mode VALIDATE  project_name  job_name	restart,reset
+
+dsjob –run project_name  job_name | job_name.invocationid
+
+dsjob –stop  project_name  job_name|job_name.invocationid
+
+‘dsjob –lprojects’  will give you a list of all the projects on the server
+ 
+‘dsjob –ljobs  project_name’ will give you a list of jobs in a particular project
+
+dsjob -report  project  job_name BASIC|DETAIL|XML
+
+dsjob -logsum –type FATAL –max 5 project_name job_name
+
+
+/********************************Export a datastage job********************************/
+
+dsexport /h=host /u=user /p=password project_name /xml /job=job_name export.dsx
+
+
+/********************************Datastage to get count of record on a link of a job in a project********************************/
+
+Count=`dsjob -linkinfo $Project $Job $Stage $Link | grep 'Link Row Count' | awk '{print $5}'`
+
+/**********GET COLUMN NAME COMMA SEPARATED*************/
+
+
+
+select  LISTAGG( COLUMN_NAME , ',')  within group (order by COLUMN_ID) COL_LIST, TABLE_NAME 
+ from all_tab_columns where table_name='P_SA_USER' and owner='GSP_DW' group by table_name
+
+
+/**********Provide your parent table (in foreign key relationship) to fetch details of child tables whose data needs to be deleted.*************/
+
+
+SELECT FK.OWNER, FK.CONSTRAINT_NAME , FK.TABLE_NAME AS CHILD_TAB ,CK.COLUMN_NAME AS CHILD_COL,PK.TABLE_NAME AS PARENT_TAB,
+'ALTER TABLE  '||FK.OWNER||'.'||FK.TABLE_NAME||' ENABLE CONSTRAINT '||FK.CONSTRAINT_NAME||' ;' AS SQL_STMT
+ FROM ALL_CONSTRAINTS FK, ALL_CONSTRAINTS PK , ALL_CONS_COLUMNS CK
+ WHERE FK.CONSTRAINT_TYPE = 'R' AND 
+ PK.OWNER = UPPER('GSP_DM') AND
+   PK.OWNER = FK.OWNER AND
+    PK.OWNER = CK.OWNER AND
+  
+ FK.R_CONSTRAINT_NAME = PK.CONSTRAINT_NAME AND  
+ FK.CONSTRAINT_NAME = CK.CONSTRAINT_NAME AND
+ FK.TABLE_NAME = CK.TABLE_NAME AND
+ PK.TABLE_NAME = 'D_ASSET'
+
+/**************************************INSERT DUMMY RECORD IN A TABLE BASED ON ITS COLUMN DATATYPE********************************************/
+
+select COL_LIST, replace(replace(COL__value_LIST,'~','''~'''),'&','''Y''') from (
+select  'insert into '||OWNER||'.'||TABLE_NAME||' ( '||LISTAGG( COLUMN_NAME , ',')  within group (order by COLUMN_ID) COL_LIST,
+') values ('||LISTAGG( COL_VALUE , ',')  within group (order by COLUMN_ID)||' )' COL__value_LIST from  (
+
+SELECT TABLE_NAME, CASE 
+ WHEN COLUMN_NAME ='SCD_EFF_DTM' THEN 'to_date(''31-DEC-1889'',''DD-MON-YYYY'')' 
+WHEN COLUMN_NAME ='SCD_EXPN_DTM' THEN  'to_date(''31-DEC-9999'',''DD-MON-YYYY'')'
+
+              WHEN SUBSTR(COLUMN_NAME,LENGTH(COLUMN_NAME)-2,3)= 'IND' THEN '&'
+              WHEN DATA_TYPE = 'NUMBER' THEN '0'
+              WHEN DATA_TYPE = 'VARCHAR2' THEN '~'
+              ELSE  'SYSDATE' end  COL_VALUE,COLUMN_ID,COLUMN_NAME,OWNER
+             
+              FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = 'D_SR_HIST' AND OWNER= 'GSP_DM' 
+              ) a group by TABLE_NAME,OWNER)
+
+
+/**********************************************File Watcher*********************************************************************/
+
+Use below in ExecCommand section of execute command activity
+test -f #$UDV_FTP_LANDED_DIR#/#Set_User_Variables.SourceFile#; echo $?
+
+
+Use below in trigger section of execute command activity
+Convert(@FM," ",CheckTrailerCount.$CommandOutput)="0"
+
+
+/**************************************************************Archive File************************************************************/
+mv #$UDV_FTP_LANDED_DIR#/#Set_User_Variables.SourceFile# #$UDV_ARCHIVE_DIR#/`echo #Set_User_Variables.SourceFile# | cut -d'.' -f1`_`date +"%Y_%m_%d"`.csv
+
+
+
+
+/************************************************Implement Type 2 Logic Record crunching ************************************/
+
+WITH T2 AS 
+ (SELECT row_id, SA_RPR_PART_KEY, DFCTV_MTRL_TAG_NUM ,RPR_CTR_INV_LCTN_ID, RPR_STN_CD, DSPSN_CD ,
+  ROW_NUMBER() OVER ( PARTITION BY ROW_ID, DFCTV_MTRL_TAG_NUM ,RPR_CTR_INV_LCTN_ID, RPR_STN_CD, DSPSN_CD ,
+  nvl(LEAD,nvl(LEAD2,TO_DATE('9999-12-31','YYYY-MM-DD')))-nvl(LEAD2,TO_DATE('9999-12-31','YYYY-MM-DD')) ORDER BY SCD_EXPN_DTM DESC) AS RN ,
+  FIRST_VALUE(SCD_EFF_DTM) OVER ( PARTITION BY ROW_ID, DFCTV_MTRL_TAG_NUM ,RPR_CTR_INV_LCTN_ID, RPR_STN_CD, DSPSN_CD,
+  nvl(LEAD,nvl(LEAD2,TO_DATE('9999-12-31','YYYY-MM-DD')))-nvl(LEAD2,TO_DATE('9999-12-31','YYYY-MM-DD'))  ORDER BY SCD_EXPN_DTM ) AS SCD_EFF_DTM,
+  LAST_VALUE(SCD_EXPN_DTM) OVER ( PARTITION BY ROW_ID, DFCTV_MTRL_TAG_NUM ,RPR_CTR_INV_LCTN_ID, RPR_STN_CD, DSPSN_CD,
+  NVL(LEAD,nvl(LEAD2,TO_DATE('9999-12-31','YYYY-MM-DD')))-NVL(LEAD2,TO_DATE('9999-12-31','YYYY-MM-DD'))  ORDER BY SCD_EXPN_DTM DESC) AS SCD_EXPN_DTM
+ FROM 
+  (
+SELECT P_SA_RPR_PART.* ,
+LEAD(SCD_EFF_DTM) OVER ( PARTITION BY ROW_ID, DFCTV_MTRL_TAG_NUM ,RPR_CTR_INV_LCTN_ID, RPR_STN_CD, DSPSN_CD  ORDER BY SCD_EXPN_DTM ) AS LEAD
+ ,LEAD(SCD_EFF_DTM) OVER ( PARTITION BY ROW_ID ORDER BY SCD_EXPN_DTM  ) lead2
+   FROM  GSP_DW.P_SA_RPR_PART WHERE ETL_UPDT_DTM >TO_DATE('2013-12-06 08:54:51','YYYY-MM-DD HH24:MI:SS')
+ )
+)
+select t1.*
+FROM 
+GSP_DW.P_SA_RPR_PART t1
+INNER JOIN T2 ON t1.SA_RPR_PART_KEY =T2.SA_RPR_PART_KEY
+
+WHERE T2.RN=1
+
+
+
+
+
+
+
+*********************************************** JDE Julian Date**********************************************************************************
+
+
+select
+to_char(to_date(substr('113365',2,5),'YYDDD'),'DD/MM/YYYY')
+from DUAL ;
+
+
+
+**********************************sTRiP SPECIal character from varchar col having special characters tab**********************************************************************************
+
+
+ RTRIM(rtrim(replace(replace(rtrim(rtrim(upper(TRIM(REPLACE(NVL(UPPER(S_PA_SESSN_ATTR.DATA_VAL),'~'),CHR(0),''))),chr(9)),chr(32)),'  ', ' '),CHR(13),''),CHR(10)),chr(32))
+
+
+
+
+*********************************************** string aggregation**********************************************************************************
+
+
+create or replace
+function         stragg
+  ( input varchar2 )
+  return varchar2
+  deterministic
+  parallel_enable
+  aggregate using stragg_type
+;
+
+
+
+*********************************************** to check if string can be converted to number**********************************************************************************
+
+select DECODE(replace( translate( 'YOUR STRING', '0123456789', '0' ), '0', '' ),NULL, 'NUMBER','CONTAINS CHAR') from dual;
+
+
+
+
+
+
+
+
+*********************************************** pl sql BLOCK RETURNING COLUMNS of table**********************************************************************************
+
+
+
+
+
+SET SERVEROUTPUT ON
+declare
+cursor c1 is (select column_name from all_tab_columns where lower( table_name)='d_sr_hist' and owner = 'GSP_DM' and rownum < 10);
+x varchar2(1000);
+z varchar2(1000);
+Z1 varchar2(1000);
+Y int;
+Y1 int;
+begin
+z1 := 'SELECT COUNT(*) FROM GSP_DM.d_sr_hist';
+execute immediate (z1) into y1;
+open c1;
+LOOP
+FETCH C1 INTO X;
+exit when c1%notfound;
+z := 'SELECT COUNT(*) FROM GSP_DM.d_sr_hist where '||x||' is null';
+
+execute immediate (z) into y;
+
+IF y=y1 THEN
+dbms_output.put_line(y);
+else
+dbms_output.put_line('nO MATCH');
+END IF;
+END LOOP;
+end;
+
+
+
+*********************************************** pl sql BLOCK cREATE TEST DATA**********************************************************************************
+
+
+
+set serveroutput on size 1000000
+
+
+declare
+  QUERY_STR varchar2(5000);
+  v1 number;
+  cur_row_id varchar2(100);
+
+
+
+begin
+
+select row_id into cur_row_id from gsp_stg.S_SA_ORDR where rownum=1;
+
+delete from gsp_stg.S_SA_ORDR where row_id like '%TC%';
+
+
+-- generating test data for TC4
+
+
+
+
+-- generating test data for TC4
+FOR Lcntr IN 1..300
+LOOP
+   
+
+ select 'insert into gsp_stg.S_SA_ORDR  select '||replace(replace(replace(replace(col_list,'CDC_CMT_DTM','CDC_CMT_DTM+2'),'ROW_ID','ROW_ID||''TC5'''),'CDC_SYS_CHG_NUM','CDC_SYS_CHG_NUM+2'),'CDC_OPN_CD','''UPDATE'' CDC_OPN_CD') ||' from GSP_STG.'|| TABLE_NAME || ' where row_id= '''||cur_row_id ||''' '  into QUERY_STR from (
+ select  LISTAGG( COLUMN_NAME , ',')  within group (order by COLUMN_ID) COL_LIST, TABLE_NAME 
+ from all_tab_columns where table_name='S_SA_ORDR' and owner='GSP_STG' group by table_name) a;
+  DBMS_OUTPUT.PUT_LINE (QUERY_STR);
+   execute immediate QUERY_STR;
+
+
+
+END LOOP;
+end;
+/
+
+
+
+************************************** pl sql BLOCK alphanumeric, with a dash allowed for hyphenated names**********************************************************************************
+
+
+
+In general, English surnames are all alphanumeric, with a dash allowed for hyphenated names. 
+We can use the below mentioned PL/SQL block to ensure that only valid name characters are entered:
+
+BEGIN
+if
+    not regexp_like (first_name, '^[a-zA-Z .''-]+$')  -- negates alpha, space and dashes
+or
+    not regexp_like (middle_name, '^[a-zA-Z .''-]+$')
+or
+    not regexp_like (last_name, '^[a-zA-Z .''-]+$')
+then
+    dbms_output.put_line(‘Invalid characters in names.  Please re-enter’);
+END
+
+
+*********************************************** pl sql Disable Constraints**********************************************************************************
+
+--SET SERVEROUTPUT ON
+declare
+cursor C1 (v_key varchar2) is (select CONSTRAINT_NAME, TABLE_NAME,OWNER FROM DBA_CONSTRAINTS where TABLE_NAME='F_SR_HIST' and OWNER=v_key and CONSTRAINT_TYPE='R' AND STATUS = 'ENABLED');
+X varchar2(1000);
+Y varchar2(1000);
+Z varchar2(1000);
+Z1 varchar2(1000);
+Z2 varchar2(1000);
+ -- CONDITION varchar2(255);
+  --Y int;
+begin
+Z2 := 'GSP_DM';
+open C1(Z2);
+LOOP
+FETCH C1 INTO X,Y,Z;
+exit when C1%notfound;
+Z1 := 'alter table '||Z||'.'||Y||' disable constraint '||X;
+dbms_output.put_line(Z1);
+--execute immediate (Z1);
+end loop;
+end;
+
+
+
+*********************************************** datastage transformer precedence of logical operators**********************************************************************************
+
+
+
+Numeric data, string data, and the null value can function as logical data:
+
+The numeric value 0, is false; all other numeric values are true.
+An empty string is false; all other character strings are true.
+The SQL null value is neither true nor false. It has the logical value of null.
+Logical operators test for these conditions. The logical operators available are:
+
+And (or the equivalent &)
+Or (or the equivalent !)
+Not (inverts a logical value)
+These are the factors that determine operator precedence in logical operations:
+
+Arithmetic and relational operations take precedence over logical operations.
+Logical operations are evaluated from left to right.
+And statements and Or statements have equal precedence.
+In If...Then...Else clauses, the logical value null takes the false action.
+
+
+
+
+In SQl, AND has precedence over OR
+
+
+**********************************************************************************Operator Precedence (Transact-SQL**********************************************************************************
+
+
+1	~ (Bitwise NOT)
+2	* (Multiply), / (Division), % (Modulo)
+3	+ (Positive), - (Negative), + (Add), (+ Concatenate), - (Subtract), & (Bitwise AND), ^ (Bitwise Exclusive OR), | (Bitwise OR)
+4	=, >, <, >=, <=, <>, !=, !>, !< (Comparison operators)
+5	NOT
+6	AND
+7	ALL, ANY, BETWEEN, IN, LIKE, OR, SOME
+8	= (Assignment
+
+
+
+
+
+
+
+
+**********************************************************************************Cursor to create a query out of table names***********************************************
+
+SET SERVEROUTPUT ON
+declare
+cursor c1 is (select distinct TABLE_NAME a,'SELECT count(*) FROM GSP_DW.'||TABLE_NAME||' WHERE '||SUBSTR(TABLE_NAME,3,length (TABLE_NAME))||'_KEY = 0' B from ALL_TAB_COLUMNS where  OWNER= 'GSP_DW' and TABLE_NAME not in ('P_WRNTY_PART_EXCLN_LST','R_DM_SCRB_DEFN_MSTR','P_GEO_HIER','P_SA_EXTN_PART_TRK_CD','R_DM_SCRB_DEFN_DTL','P_SA_ADDR_PRSN'));
+x varchar2(1000);
+Y varchar2(1000);
+z int;
+
+begin
+open c1;
+LOOP
+FETCH C1 into X,Y;
+EXIT when C1%NOTFOUND;
+--DBMS_OUTPUT.PUT_LINE(Y);
+execute immediate (Y) into Z;
+--DBMS_OUTPUT.PUT_LINE(x);
+if Z=0 then
+dbms_output.put_line(x||';FALSE');
+else
+dbms_output.put_line(x||';TRUE');
+END IF;
+end LOOP;
+close c1;
+end;
+--execute immediate (z) into y;
+
+
+**********************************************************************************Create multiple rows***********************************************
+
+
+
+	SELECT  LEVEL   AS n
+	FROM    dual
+	CONNECT BY      LEVEL   <= x
+The result set will have x rows, with n=1, 2, 3, ..., x.
+
+
+
+**********************************************************************************Remove control Characters***********************************************
+Open file in VI mode and run the below command
+
+
+	:1,$ s/(Ctrl+v)(Ctrl+m)//g
+
+**********************************************************************************Kill Session***********************************************
+SELECT v.session_id,oracle_username USERNAME, owner OBJECT_OWNER,
+object_name, object_type, s.osuser,
+DECODE(l.block,
+  0, 'Not Blocking',
+  1, 'Blocking',
+  2, 'Global') STATUS,
+  DECODE(v.locked_mode,
+    0, 'None',
+    1, 'Null',
+    2, 'Row-S (SS)',
+    3, 'Row-X (SX)',
+    4, 'Share',
+    5, 'S/Row-X (SSX)',
+    6, 'Exclusive', TO_CHAR(lmode)
+  ) MODE_HELD
+FROM gv$locked_object v, dba_objects d,
+gv$lock l, gv$session s
+WHERE v.object_id = d.object_id
+AND (v.object_id = l.id1)
+and v.session_id = s.sid and owner = '<Table name>'
+ORDER BY oracle_username, session_id;
+
+
+SELECT A.SID, A.SERIAL#, A.STATUS, A.OSUSER, A.USERNAME, A.MACHINE, A.LOCKWAIT, A.BLOCKING_SESSION_STATUS, B.SQL_FULLTEXT FROM gv$session A, gv$sql B
+WHERE A.SQL_ID=B.SQL_ID and  sid in (294,860);
+
+
+
+select a.session_id,a.oracle_username, a.os_user_name, b.owner "OBJECT OWNER", b.object_name,b.object_type,a.locked_mode from 
+(select object_id, SESSION_ID, ORACLE_USERNAME, OS_USER_NAME, LOCKED_MODE from v$locked_object) a, 
+(select object_id, owner, object_name,object_type from dba_objects where object_name = 'P_SA_INTRNL_ITEM') b
+where a.object_id=b.object_id
+
+ALTER SYSTEM KILL SESSION '240,9034';--(Generic Command)
+OR
+EXECUTE GBI_UTIL.KILL_SESSION(240, 2); 
+
+
+
+
+**********************************************************************************Export sql output to csv and mail it***********************************************
+
+
+#! /usr/bin/ksh
+
+#############################################################################################
+# Name        : eDHR_Post_Process_Error_Files.ksh                                           #
+# Usage       : eDHR_Post_Process_Error_Files.ksh                                           # 
+# Description : The script sends the email to the team with the error codes                 #
+#                                                                                           #
+#############################################################################################
+#
+
+DSPROJ_DIR=/dsland001/etl/Projects/EGS_US; export DSPROJ_DIR
+INPUT=${DSPROJ_DIR}/input
+LOG=${DSPROJ_DIR}/log
+LOG_FILE=${LOG}/GSP_BI_move_ftp_to_input_$(date +%Y%m%d%H%M%S).log
+FTP=${DSPROJ_DIR}/ftp_landed
+
+DATA_LOG_FILE_PRM=${DSPROJ_DIR}/log/`date +\%Y\%m\%d_\%H\%M\%S`_eDHR_Post_Process_Error_Files.log
+touch $DATA_LOG_FILE_PRM
+
+
+
+##echo 'Log file generated at : ' $DATA_LOG_FILE_PRM
+
+
+#Set TNS_ADMIN environment variable
+varProj=`basename $DSPROJ_DIR`
+TNS_ADMIN=/dsproj001/is8/Projects/$varProj; export TNS_ADMIN
+
+#Retrieve connection string for Oracle
+CONNSTRING=`cat ${DSPROJ_DIR}/script/db_credentials.dat`
+
+# Retrieve databse user name
+DB_USER=`echo $CONNSTRING|cut -d '/' -f1`
+
+
+Table_Name=`echo DHR_STG.E$\S_DHR_BOM`
+
+##SQL_Output=`sqlplus -s $CONNSTRING <<EOF 
+##Select distinct Src_File_Name, etl_err_descr  From  $Table_Name where src_file_name is not null;
+##EOF`
+
+##echo $SQL_Output
+EMAILMESSAGE="/dsland001/etl/Projects/EGS_US/script/emailmessage.txt"
+
+echo "  
+      SET HEADING OFF;
+SET LINESIZE 32000;
+SET PAGESIZE 40000;
+SET LONG 50000;
+`cat /dsland001/etl/Projects/EGS_US/etlcode/ExportScripts/trkr.sql`" | sqlplus -s $CONNSTRING > message.csv
+
+EMAIL="ankit_agarwal@baxter.com"
+SUBJECT="GSP_BI Error Alert"
+
+#uuencode ank.txt ank.txt > /tmp/out.mail
+#/bin/mail -s "$SUBJECT" "$EMAIL" < /tmp/out.mail
+uuencode message.csv message.csv | mailx -s "$SUBJECT" "$EMAIL"
+#/bin/mail -a message.xls -s "$SUBJECT" "$EMAIL"
+#mutt -s "$SUBJECT" "$EMAIL"
+
+
+
+
+
+trkr.sql
+
+SET COLSEP '","'
+SELECT  '"'||ITEM_PART_TRKR_KEY , DATA_SRC_CD , ETL_JOB_NAME ||'"'
+FROM GSP_DM.D_ITEM_PART_TRKR where rownum <10;
+
+**********************************************************************************tablespace***********************************************
+
+
+Select tablespace_name, 'Mb'||' '||round(sum(bytes/1024/1024)) "Free_Size"
+  from dba_free_space
+  where tablespace_name='DATA_GSP_DM'
+  group by tablespace_name;
+
+
+select b.tablespace_name, tbs_size SizeMb, a.free_space FreeMb
+from 
+(select tablespace_name, round(sum(bytes)/1024/1024 ,2) as free_space 
+from dba_free_space group by tablespace_name) a, 
+(select tablespace_name, sum(bytes)/1024/1024 as tbs_size 
+from dba_data_files group by tablespace_name
+UNION
+select tablespace_name, sum(bytes)/1024/1024 tbs_size
+from dba_temp_files
+group by tablespace_name ) b
+where a.tablespace_name(+)=b.tablespace_name;
+
+
+**********************************************************************************tns oraname connection entries***********************************************
+
+
+cd /dsland001/etl/Projects/EGS_US/connections/
+
+**********************************************************************************Trigger DS job here***********************************************
+
+cd /dsland001/etl/Projects/EGS_US/script/
+
+**********************************************************************************Remove Control character***********************************************
+
+REGEXP_REPLACE(D.DATA_VAL, '[[:cntrl:]]','')    AS TEST_QN_ANS_DESCR,
+
+
+**********************************************************************************SID of running sessions ....aCTIVE Query of an SP***********************************************
+
+
+SELECT A.SID, A.SERIAL#, A.STATUS, A.OSUSER, A.USERNAME, A.MACHINE, A.LOCKWAIT, A.BLOCKING_SESSION_STATUS, B.SQL_FULLTEXT FROM V$SESSION A, V$SQL B
+WHERE A.SQL_ID=B.SQL_ID AND
+A.STATUS='ACTIVE';
+
+**********************************************************************************Excel Macro split excel ***********************************************
+
+
+
+  Sub Macro12()
+
+      Dim wb As Workbook
+      Dim ThisSheet As Worksheet
+      Dim NumOfColumns As Integer
+      Dim RangeToCopy As Range
+      Dim WorkbookCounter As Integer
+
+      Application.ScreenUpdating = False
+
+
+      Set ThisSheet = ThisWorkbook.ActiveSheet
+      NumOfColumns = ThisSheet.UsedRange.Columns.Count
+      WorkbookCounter = 1
+
+      For p = 1 To ThisSheet.UsedRange.Rows.Count Step 5001
+        Set wb = Workbooks.Add
+
+        Set RangeToCopy = ThisSheet.Range(ThisSheet.Cells(p, 1), ThisSheet.Cells(p + 5000, NumOfColumns))
+        RangeToCopy.Copy wb.Sheets(1).Range("A1")
+
+        wb.SaveAs "C:\Users\ankitagarwal87\Documents\Baxter\eDHR\C007\PROD deployment\T_S_DHR_BOM_3 - Copy" & WorkbookCounter
+        wb.Close
+        WorkbookCounter = WorkbookCounter + 1
+      Next p
+
+      Application.ScreenUpdating = True
+      Set wb = Nothing
+
+
+  End Sub
+
+************************************************************Command to remove spaces from filename :-************************************************************
+find /dsland001/etl/Projects/MDH_US/input/input_20150313 -name "BOM* *.xml" -type f -exec bash -c 'mv "$0" "${0// /}"' {} \;
+find /dsland001/etl/Projects/MDH_US/input/input_20150313 -name "Equip* *.xml" -type f -exec bash -c 'mv "$0" "${0// /}"' {} \;
+
+
+
+select * from _V_SYS_OBJECT_DSLICE_INFO;
+select * from _T_OBJECT;
+select * from user_source; 
+select * from _v_objects;
+SELECT * FROM  _v_procedure;
+select distinct OBJTYPE from _v_objects;
+
+SELECT T.*
+FROM
+ _T_CLASS T,
+ _T_OBJECT O
+ WHERE
+ O.OBJID=T.OID AND
+
+***********************************************Macro excel compare 2 excels cells Highlight matches*************************
+Sub RunCompare()
+'Call the compareSheets routine
+Call compareSheets("C:\Users\ankitagarwal87\Documents\TJX\miscc\a.xlsx", "C:\Users\ankitagarwal87\Documents\TJX\miscc\b.xlsx")
+End Sub
+Sub compareSheets(shtBefore As String, shtAfter As String)
+    Dim sh As Worksheet
+    Dim rn As Range
+    Dim mycell As Range
+    Dim mycell2 As Range
+    Set sh1 = ThisWorkbook.Sheets("Sheet1")
+    Set sh2 = ThisWorkbook.Sheets("Sheet2")
+
+    Dim k As Long
+For Each mycell In sh1.UsedRange
+    For Each mycell2 In sh2.UsedRange
+ If Not IsEmpty(mycell) Then
+
+        If LCase(mycell.Value) = LCase(mycell2.Value) Then
+ 
+        mycell2.Interior.Color = vbYellow
+End If
+End If
+ 
+    Next
+
+Next
+        
+End Sub
+
+***********************************************Excel create table of contents*************************
+
+https://professor-excel.com/table-of-contents-in-excel/
+=REPLACE(GET.WORKBOOK(1),1,FIND("]",GET.WORKBOOK(1)),"")
+
+=INDEX(SheetNames,A2) 
+ 
+
+
+***********************************************Unix Script to Split a file based on distinct values in a column*************************
+
+#!/bin/ksh
+vFile=$1
+cat $vFile|awk -F'\t' '{print $1}'|sort -u>temp.txt
+while read line
+do
+{
+cat $vFile|grep ^${line}>${line}_$vFile
+}
+done<temp.txt
+echo $?  
+
+
+
+---------------------------Oracle SQL generate mutiple records based on column value--------------------------------------------------------------
+with t as (select 1 as col1 , 3 as rept from dummy
+union
+select 2 as col1 , 5 as rept from dummy
+),
+b as (select 1 as rept from dummy
+union
+select 2 as rept from dummy
+union
+select 3 as rept from dummy
+union
+select 4 as rept from dummy
+union
+select 5 as rept from dummy
+)
+, d as (
+select col1,t.rept, b.rept seq from t,b order by 1,2,3)
+select d.col1,d.rept from d where d.rept >= d.seq;  
+
+---------------------------SAP HANA rowid --------------------------------------------------------------
+
+DELETE FROM XREF.XREF_PARTNER_FUNCTION WHERE "$rowid$"='7'; 
